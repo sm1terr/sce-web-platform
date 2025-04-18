@@ -96,6 +96,61 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-sce-background text-sce-text;
+    font-family: "Noto Sans", "Roboto", "Arial", sans-serif;
+  }
+}
+
+@layer components {
+  .sce-header {
+    @apply bg-sce-primary text-white py-4 px-6 flex items-center justify-between;
+  }
+
+  .sce-logo {
+    @apply text-2xl font-bold tracking-tight;
+  }
+
+  .sce-nav {
+    @apply flex space-x-4;
+  }
+
+  .sce-nav-link {
+    @apply text-white hover:text-gray-200 transition-colors;
+  }
+
+  .sce-container {
+    @apply max-w-6xl mx-auto p-4;
+  }
+
+  .sce-footer {
+    @apply bg-sce-secondary text-white py-4 px-6 mt-8;
+  }
+
+  .sce-card {
+    @apply border border-sce-border rounded-md p-4 bg-white shadow-sm;
+  }
+
+  .sce-card-title {
+    @apply text-xl font-bold text-sce-primary mb-2;
+  }
+
+  .sce-button {
+    @apply px-4 py-2 bg-sce-primary text-white rounded-md hover:bg-sce-hover transition-colors;
+  }
+
+  .sce-link {
+    @apply text-sce-link hover:text-sce-hover underline transition-colors;
+  }
+
+  .sce-object-title {
+    @apply font-bold text-2xl text-sce-primary border-b border-sce-border pb-2 mb-4;
+  }
+
+  .sce-object-info {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4 mb-4;
+  }
+
+  .sce-object-description {
+    @apply prose max-w-none;
   }
 }

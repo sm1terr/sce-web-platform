@@ -1,54 +1,59 @@
 import {
   ApiResponse,
+  ClearanceLevel,
+  CreateObjectData,
+  CreatePostData,
+  Department,
   LoginData,
   Post,
+  PostCategory,
   RegisterData,
   SCEObject,
+  UpdateUserData,
   User,
+  UserRole,
   VerifyEmailData
 } from "@/types";
 
-// This is a mock API service for demonstration
-// In a real application, you would connect to a backend server
-
-const LOCAL_STORAGE_USER_KEY = "sce-user";
+// Ключи для локального хранилища
+const LOCAL_STORAGE_USER_KEY = "sce-current-user";
 const LOCAL_STORAGE_OBJECTS_KEY = "sce-objects";
 const LOCAL_STORAGE_POSTS_KEY = "sce-posts";
 const LOCAL_STORAGE_USERS_KEY = "sce-users";
 
-// Get data from localStorage
+// Получение данных из localStorage
 const getLocalData = <T>(key: string, defaultValue: T): T => {
   try {
     const data = localStorage.getItem(key);
     return data ? JSON.parse(data) : defaultValue;
   } catch (error) {
-    console.error(`Error getting data from localStorage: ${key}`, error);
+    console.error(`Ошибка получения данных из localStorage: ${key}`, error);
     return defaultValue;
   }
 };
 
-// Save data to localStorage
+// Сохранение данных в localStorage
 const saveLocalData = <T>(key: string, data: T): void => {
   try {
     localStorage.setItem(key, JSON.stringify(data));
   } catch (error) {
-    console.error(`Error saving data to localStorage: ${key}`, error);
+    console.error(`Ошибка сохранения данных в localStorage: ${key}`, error);
   }
 };
 
-// Get current authenticated user
+// Получение текущего аутентифицированного пользователя
 export const getCurrentUser = (): User | null => {
   return getLocalData<User | null>(LOCAL_STORAGE_USER_KEY, null);
 };
 
-// Save current authenticated user
+// Сохранение текущего аутентифицированного пользователя
 export const saveCurrentUser = (user: User | null): void => {
   saveLocalData(LOCAL_STORAGE_USER_KEY, user);
 };
 
-// Login
+// Вход в систему
 export const login = async (data: LoginData): Promise<ApiResponse<User>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
@@ -58,23 +63,23 @@ export const login = async (data: LoginData): Promise<ApiResponse<User>> => {
     return { success: false, error: "Пользователь не найден" };
   }
   
-  // In a real application, you would hash and verify passwords
-  // This is just for demonstration
+  // В реальном приложении вы бы хэшировали и проверяли пароли
+  // Это только для демонстрации
   if (data.password !== "password") {
     return { success: false, error: "Неверный пароль" };
   }
   
   if (!user.isEmailVerified) {
-    return { success: false, error: "Подтвердите свой адрес электронной почты" };
+    return { success: false, error: "Пожалуйста, подтвердите свой адрес электронной почты перед входом в систему" };
   }
   
   saveCurrentUser(user);
   return { success: true, data: user, message: "Вход выполнен успешно" };
 };
 
-// Register
+// Регистрация
 export const register = async (data: RegisterData): Promise<ApiResponse<User>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
@@ -91,11 +96,18 @@ export const register = async (data: RegisterData): Promise<ApiResponse<User>> =
     return { success: false, error: "Пароли не совпадают" };
   }
   
+  // Определяем роль - первый пользователь получает роль ADMIN
+  const role = users.length === 0 ? UserRole.ADMIN : UserRole.READER;
+  
+  // Создаем нового пользователя
   const newUser: User = {
     id: `user_${Date.now()}`,
     email: data.email,
     username: data.username,
-    role: users.length === 0 ? "ADMIN" : "READER", // First user is admin, others are readers
+    role: role,
+    clearanceLevel: role === UserRole.ADMIN ? ClearanceLevel.LEVEL_5 : ClearanceLevel.LEVEL_1,
+    department: role === UserRole.ADMIN ? Department.ADMINISTRATION : undefined,
+    position: role === UserRole.ADMIN ? "Директор Фонда" : "Новый сотрудник",
     createdAt: new Date().toISOString(),
     isEmailVerified: false
   };
@@ -103,23 +115,24 @@ export const register = async (data: RegisterData): Promise<ApiResponse<User>> =
   const updatedUsers = [...users, newUser];
   saveLocalData(LOCAL_STORAGE_USERS_KEY, updatedUsers);
   
-  // Don't log in the user until email is verified
+  // В реальном приложении здесь бы отправлялось письмо для подтверждения
+  // Не входим в систему, пока email не подтвержден
   return { 
     success: true, 
     data: newUser, 
-    message: "Регистрация успешна. Проверьте вашу почту для подтверждения." 
+    message: "Регистрация успешна. Пожалуйста, проверьте вашу электронную почту для подтверждения." 
   };
 };
 
-// Verify email
+// Подтверждение email
 export const verifyEmail = async (data: VerifyEmailData): Promise<ApiResponse<User>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
   
-  // In a real app, you would validate a real token
-  // Here we just set any user with unverified email to verified
+  // В реальном приложении здесь была бы валидация настоящего токена
+  // Здесь мы просто находим первого пользователя с неподтвержденным email
   const userIndex = users.findIndex(u => !u.isEmailVerified);
   
   if (userIndex === -1) {
@@ -143,43 +156,13 @@ export const verifyEmail = async (data: VerifyEmailData): Promise<ApiResponse<Us
   return { 
     success: true, 
     data: updatedUser, 
-    message: "Email подтвержден. Вы вошли в систему." 
+    message: "Email успешно подтвержден. Вы вошли в систему." 
   };
 };
 
-// Logout
-export const logout = async (): Promise<ApiResponse<null>> => {
-  saveCurrentUser(null);
-  return { success: true, message: "Выход выполнен успешно" };
-};
-
-// Get SCE objects
-export const getSCEObjects = async (): Promise<ApiResponse<SCEObject[]>> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  const objects = getLocalData<SCEObject[]>(LOCAL_STORAGE_OBJECTS_KEY, []);
-  return { success: true, data: objects };
-};
-
-// Get SCE object by ID
-export const getSCEObjectById = async (id: string): Promise<ApiResponse<SCEObject>> => {
-  // Simulate API delay
-  await new Promise(resolve => setTimeout(resolve, 800));
-  
-  const objects = getLocalData<SCEObject[]>(LOCAL_STORAGE_OBJECTS_KEY, []);
-  const object = objects.find(o => o.id === id);
-  
-  if (!object) {
-    return { success: false, error: "Объект не найден" };
-  }
-  
-  return { success: true, data: object };
-};
-
-// Create SCE object
-export const createSCEObject = async (object: Omit<SCEObject, "id" | "createdAt" | "updatedAt" | "createdBy">): Promise<ApiResponse<SCEObject>> => {
-  // Simulate API delay
+// Обновление профиля пользователя
+export const updateUserProfile = async (userId: string, data: UpdateUserData): Promise<ApiResponse<User>> => {
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const currentUser = getCurrentUser();
@@ -187,15 +170,169 @@ export const createSCEObject = async (object: Omit<SCEObject, "id" | "createdAt"
     return { success: false, error: "Вы должны войти в систему" };
   }
   
-  if (currentUser.role !== "ADMIN") {
+  if (currentUser.id !== userId && currentUser.role !== UserRole.ADMIN) {
+    return { success: false, error: "У вас нет прав для изменения этого профиля" };
+  }
+  
+  const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
+  const userIndex = users.findIndex(u => u.id === userId);
+  
+  if (userIndex === -1) {
+    return { success: false, error: "Пользователь не найден" };
+  }
+  
+  // Проверяем, не пытается ли пользователь изменить роль, не являясь администратором
+  if (data.role && currentUser.role !== UserRole.ADMIN) {
+    return { success: false, error: "Только администраторы могут изменять роли" };
+  }
+  
+  // Проверяем, не пытается ли пользователь изменить уровень доступа, не являясь администратором
+  if (data.clearanceLevel && currentUser.role !== UserRole.ADMIN) {
+    return { success: false, error: "Только администраторы могут изменять уровни доступа" };
+  }
+  
+  const updatedUser = {
+    ...users[userIndex],
+    ...data
+  };
+  
+  const updatedUsers = [
+    ...users.slice(0, userIndex),
+    updatedUser,
+    ...users.slice(userIndex + 1)
+  ];
+  
+  saveLocalData(LOCAL_STORAGE_USERS_KEY, updatedUsers);
+  
+  // Если обновляем текущего пользователя, то обновляем и данные текущей сессии
+  if (currentUser.id === userId) {
+    saveCurrentUser(updatedUser);
+  }
+  
+  return { 
+    success: true, 
+    data: updatedUser, 
+    message: "Профиль успешно обновлен" 
+  };
+};
+
+// Выход из системы
+export const logout = async (): Promise<ApiResponse<null>> => {
+  saveCurrentUser(null);
+  return { success: true, message: "Выход выполнен успешно" };
+};
+
+// Получение всех объектов SCE
+export const getSCEObjects = async (): Promise<ApiResponse<SCEObject[]>> => {
+  // Имитация задержки API
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  const currentUser = getCurrentUser();
+  const objects = getLocalData<SCEObject[]>(LOCAL_STORAGE_OBJECTS_KEY, []);
+  
+  // Фильтрация объектов в зависимости от уровня доступа текущего пользователя
+  let accessibleObjects = objects;
+  
+  if (currentUser) {
+    const clearanceLevelMap = {
+      [ClearanceLevel.LEVEL_1]: 1,
+      [ClearanceLevel.LEVEL_2]: 2,
+      [ClearanceLevel.LEVEL_3]: 3,
+      [ClearanceLevel.LEVEL_4]: 4,
+      [ClearanceLevel.LEVEL_5]: 5,
+    };
+    
+    const userClearanceLevel = currentUser.clearanceLevel 
+      ? clearanceLevelMap[currentUser.clearanceLevel] 
+      : 1;
+    
+    accessibleObjects = objects.filter(obj => {
+      const objectClearanceLevel = obj.requiredClearance 
+        ? clearanceLevelMap[obj.requiredClearance] 
+        : 1;
+      
+      return userClearanceLevel >= objectClearanceLevel;
+    });
+  } else {
+    // Неавторизованные пользователи видят только объекты с уровнем доступа 1
+    accessibleObjects = objects.filter(obj => obj.requiredClearance === ClearanceLevel.LEVEL_1);
+  }
+  
+  return { success: true, data: accessibleObjects };
+};
+
+// Получение объекта SCE по ID
+export const getSCEObjectById = async (id: string): Promise<ApiResponse<SCEObject>> => {
+  // Имитация задержки API
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  const currentUser = getCurrentUser();
+  const objects = getLocalData<SCEObject[]>(LOCAL_STORAGE_OBJECTS_KEY, []);
+  const object = objects.find(o => o.id === id);
+  
+  if (!object) {
+    return { success: false, error: "Объект не найден" };
+  }
+  
+  // Проверка уровня доступа
+  if (currentUser) {
+    const clearanceLevelMap = {
+      [ClearanceLevel.LEVEL_1]: 1,
+      [ClearanceLevel.LEVEL_2]: 2,
+      [ClearanceLevel.LEVEL_3]: 3,
+      [ClearanceLevel.LEVEL_4]: 4,
+      [ClearanceLevel.LEVEL_5]: 5,
+    };
+    
+    const userClearanceLevel = currentUser.clearanceLevel 
+      ? clearanceLevelMap[currentUser.clearanceLevel] 
+      : 1;
+    
+    const objectClearanceLevel = object.requiredClearance 
+      ? clearanceLevelMap[object.requiredClearance] 
+      : 1;
+    
+    if (userClearanceLevel < objectClearanceLevel) {
+      return { 
+        success: false, 
+        error: `Доступ запрещен. Требуется уровень доступа ${object.requiredClearance}.` 
+      };
+    }
+  } else if (object.requiredClearance !== ClearanceLevel.LEVEL_1) {
+    return { 
+      success: false, 
+      error: "Доступ запрещен. Требуется авторизация." 
+    };
+  }
+  
+  return { success: true, data: object };
+};
+
+// Создание объекта SCE
+export const createSCEObject = async (objectData: CreateObjectData): Promise<ApiResponse<SCEObject>> => {
+  // Имитация задержки API
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    return { success: false, error: "Вы должны войти в систему" };
+  }
+  
+  if (currentUser.role !== UserRole.ADMIN) {
     return { success: false, error: "У вас нет прав для создания объектов" };
   }
   
   const objects = getLocalData<SCEObject[]>(LOCAL_STORAGE_OBJECTS_KEY, []);
   
+  // Проверяем, не существует ли уже объект с таким номером
+  if (objects.some(o => o.number === objectData.number)) {
+    return { success: false, error: `Объект SCE-${objectData.number} уже существует` };
+  }
+  
+  // Создаем новый объект
   const newObject: SCEObject = {
-    ...object,
-    id: `sce-${Date.now()}`,
+    id: `sce-obj-${Date.now()}`,
+    ...objectData,
     createdBy: currentUser.id,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -204,12 +341,12 @@ export const createSCEObject = async (object: Omit<SCEObject, "id" | "createdAt"
   const updatedObjects = [...objects, newObject];
   saveLocalData(LOCAL_STORAGE_OBJECTS_KEY, updatedObjects);
   
-  return { success: true, data: newObject, message: "Объект успешно создан" };
+  return { success: true, data: newObject, message: "Объект SCE успешно создан" };
 };
 
-// Update SCE object
+// Обновление объекта SCE
 export const updateSCEObject = async (id: string, updates: Partial<SCEObject>): Promise<ApiResponse<SCEObject>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const currentUser = getCurrentUser();
@@ -217,7 +354,7 @@ export const updateSCEObject = async (id: string, updates: Partial<SCEObject>): 
     return { success: false, error: "Вы должны войти в систему" };
   }
   
-  if (currentUser.role !== "ADMIN") {
+  if (currentUser.role !== UserRole.ADMIN) {
     return { success: false, error: "У вас нет прав для обновления объектов" };
   }
   
@@ -242,12 +379,12 @@ export const updateSCEObject = async (id: string, updates: Partial<SCEObject>): 
   
   saveLocalData(LOCAL_STORAGE_OBJECTS_KEY, updatedObjects);
   
-  return { success: true, data: updatedObject, message: "Объект успешно обновлен" };
+  return { success: true, data: updatedObject, message: "Объект SCE успешно обновлен" };
 };
 
-// Delete SCE object
+// Удаление объекта SCE
 export const deleteSCEObject = async (id: string): Promise<ApiResponse<null>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const currentUser = getCurrentUser();
@@ -255,7 +392,7 @@ export const deleteSCEObject = async (id: string): Promise<ApiResponse<null>> =>
     return { success: false, error: "Вы должны войти в систему" };
   }
   
-  if (currentUser.role !== "ADMIN") {
+  if (currentUser.role !== UserRole.ADMIN) {
     return { success: false, error: "У вас нет прав для удаления объектов" };
   }
   
@@ -264,23 +401,53 @@ export const deleteSCEObject = async (id: string): Promise<ApiResponse<null>> =>
   
   saveLocalData(LOCAL_STORAGE_OBJECTS_KEY, updatedObjects);
   
-  return { success: true, message: "Объект успешно удален" };
+  return { success: true, message: "Объект SCE успешно удален" };
 };
 
-// Get posts
+// Получение всех публикаций
 export const getPosts = async (): Promise<ApiResponse<Post[]>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
+  const currentUser = getCurrentUser();
   const posts = getLocalData<Post[]>(LOCAL_STORAGE_POSTS_KEY, []);
-  return { success: true, data: posts };
+  
+  // Фильтрация публикаций в зависимости от уровня доступа текущего пользователя
+  let accessiblePosts = posts;
+  
+  if (currentUser) {
+    const clearanceLevelMap = {
+      [ClearanceLevel.LEVEL_1]: 1,
+      [ClearanceLevel.LEVEL_2]: 2,
+      [ClearanceLevel.LEVEL_3]: 3,
+      [ClearanceLevel.LEVEL_4]: 4,
+      [ClearanceLevel.LEVEL_5]: 5,
+    };
+    
+    const userClearanceLevel = currentUser.clearanceLevel 
+      ? clearanceLevelMap[currentUser.clearanceLevel] 
+      : 1;
+    
+    accessiblePosts = posts.filter(post => {
+      if (!post.clearanceRequired) return true;
+      
+      const postClearanceLevel = clearanceLevelMap[post.clearanceRequired];
+      return userClearanceLevel >= postClearanceLevel;
+    });
+  } else {
+    // Неавторизованные пользователи видят только публикации без требований к уровню доступа
+    accessiblePosts = posts.filter(post => !post.clearanceRequired || post.clearanceRequired === ClearanceLevel.LEVEL_1);
+  }
+  
+  return { success: true, data: accessiblePosts };
 };
 
-// Get post by ID
+// Получение публикации по ID
 export const getPostById = async (id: string): Promise<ApiResponse<Post>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
+  const currentUser = getCurrentUser();
   const posts = getLocalData<Post[]>(LOCAL_STORAGE_POSTS_KEY, []);
   const post = posts.find(p => p.id === id);
   
@@ -288,12 +455,41 @@ export const getPostById = async (id: string): Promise<ApiResponse<Post>> => {
     return { success: false, error: "Публикация не найдена" };
   }
   
+  // Проверка уровня доступа
+  if (currentUser && post.clearanceRequired) {
+    const clearanceLevelMap = {
+      [ClearanceLevel.LEVEL_1]: 1,
+      [ClearanceLevel.LEVEL_2]: 2,
+      [ClearanceLevel.LEVEL_3]: 3,
+      [ClearanceLevel.LEVEL_4]: 4,
+      [ClearanceLevel.LEVEL_5]: 5,
+    };
+    
+    const userClearanceLevel = currentUser.clearanceLevel 
+      ? clearanceLevelMap[currentUser.clearanceLevel] 
+      : 1;
+    
+    const postClearanceLevel = clearanceLevelMap[post.clearanceRequired];
+    
+    if (userClearanceLevel < postClearanceLevel) {
+      return { 
+        success: false, 
+        error: `Доступ запрещен. Требуется уровень доступа ${post.clearanceRequired}.` 
+      };
+    }
+  } else if (post.clearanceRequired && post.clearanceRequired !== ClearanceLevel.LEVEL_1) {
+    return { 
+      success: false, 
+      error: "Доступ запрещен. Требуется авторизация." 
+    };
+  }
+  
   return { success: true, data: post };
 };
 
-// Create post
-export const createPost = async (post: Omit<Post, "id" | "createdAt" | "updatedAt" | "authorId" | "authorName">): Promise<ApiResponse<Post>> => {
-  // Simulate API delay
+// Создание публикации
+export const createPost = async (postData: CreatePostData): Promise<ApiResponse<Post>> => {
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const currentUser = getCurrentUser();
@@ -301,15 +497,16 @@ export const createPost = async (post: Omit<Post, "id" | "createdAt" | "updatedA
     return { success: false, error: "Вы должны войти в систему" };
   }
   
-  if (currentUser.role !== "ADMIN") {
+  if (currentUser.role !== UserRole.ADMIN) {
     return { success: false, error: "У вас нет прав для создания публикаций" };
   }
   
   const posts = getLocalData<Post[]>(LOCAL_STORAGE_POSTS_KEY, []);
   
+  // Создаем новую публикацию
   const newPost: Post = {
-    ...post,
     id: `post-${Date.now()}`,
+    ...postData,
     authorId: currentUser.id,
     authorName: currentUser.username,
     createdAt: new Date().toISOString(),
@@ -322,9 +519,9 @@ export const createPost = async (post: Omit<Post, "id" | "createdAt" | "updatedA
   return { success: true, data: newPost, message: "Публикация успешно создана" };
 };
 
-// Update post
+// Обновление публикации
 export const updatePost = async (id: string, updates: Partial<Post>): Promise<ApiResponse<Post>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const currentUser = getCurrentUser();
@@ -332,7 +529,7 @@ export const updatePost = async (id: string, updates: Partial<Post>): Promise<Ap
     return { success: false, error: "Вы должны войти в систему" };
   }
   
-  if (currentUser.role !== "ADMIN") {
+  if (currentUser.role !== UserRole.ADMIN) {
     return { success: false, error: "У вас нет прав для обновления публикаций" };
   }
   
@@ -360,9 +557,9 @@ export const updatePost = async (id: string, updates: Partial<Post>): Promise<Ap
   return { success: true, data: updatedPost, message: "Публикация успешно обновлена" };
 };
 
-// Delete post
+// Удаление публикации
 export const deletePost = async (id: string): Promise<ApiResponse<null>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const currentUser = getCurrentUser();
@@ -370,7 +567,7 @@ export const deletePost = async (id: string): Promise<ApiResponse<null>> => {
     return { success: false, error: "Вы должны войти в систему" };
   }
   
-  if (currentUser.role !== "ADMIN") {
+  if (currentUser.role !== UserRole.ADMIN) {
     return { success: false, error: "У вас нет прав для удаления публикаций" };
   }
   
@@ -382,9 +579,9 @@ export const deletePost = async (id: string): Promise<ApiResponse<null>> => {
   return { success: true, message: "Публикация успешно удалена" };
 };
 
-// Get all users (admin only)
+// Получение всех пользователей (только для администраторов)
 export const getUsers = async (): Promise<ApiResponse<User[]>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const currentUser = getCurrentUser();
@@ -392,7 +589,7 @@ export const getUsers = async (): Promise<ApiResponse<User[]>> => {
     return { success: false, error: "Вы должны войти в систему" };
   }
   
-  if (currentUser.role !== "ADMIN") {
+  if (currentUser.role !== UserRole.ADMIN) {
     return { success: false, error: "У вас нет прав для просмотра пользователей" };
   }
   
@@ -400,9 +597,9 @@ export const getUsers = async (): Promise<ApiResponse<User[]>> => {
   return { success: true, data: users };
 };
 
-// Update user role (admin only)
+// Обновление роли пользователя (только для администраторов)
 export const updateUserRole = async (id: string, role: string): Promise<ApiResponse<User>> => {
-  // Simulate API delay
+  // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const currentUser = getCurrentUser();
@@ -410,7 +607,7 @@ export const updateUserRole = async (id: string, role: string): Promise<ApiRespo
     return { success: false, error: "Вы должны войти в систему" };
   }
   
-  if (currentUser.role !== "ADMIN") {
+  if (currentUser.role !== UserRole.ADMIN) {
     return { success: false, error: "У вас нет прав для изменения ролей" };
   }
   
@@ -427,7 +624,7 @@ export const updateUserRole = async (id: string, role: string): Promise<ApiRespo
   
   const updatedUser = {
     ...users[userIndex],
-    role
+    role: role as UserRole
   };
   
   const updatedUsers = [
@@ -439,4 +636,106 @@ export const updateUserRole = async (id: string, role: string): Promise<ApiRespo
   saveLocalData(LOCAL_STORAGE_USERS_KEY, updatedUsers);
   
   return { success: true, data: updatedUser, message: "Роль пользователя успешно обновлена" };
+};
+
+// Обновление уровня доступа пользователя (только для администраторов)
+export const updateUserClearance = async (id: string, clearanceLevel: ClearanceLevel): Promise<ApiResponse<User>> => {
+  // Имитация задержки API
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    return { success: false, error: "Вы должны войти в систему" };
+  }
+  
+  if (currentUser.role !== UserRole.ADMIN) {
+    return { success: false, error: "У вас нет прав для изменения уровней доступа" };
+  }
+  
+  const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
+  const userIndex = users.findIndex(u => u.id === id);
+  
+  if (userIndex === -1) {
+    return { success: false, error: "Пользователь не найден" };
+  }
+  
+  const updatedUser = {
+    ...users[userIndex],
+    clearanceLevel
+  };
+  
+  const updatedUsers = [
+    ...users.slice(0, userIndex),
+    updatedUser,
+    ...users.slice(userIndex + 1)
+  ];
+  
+  saveLocalData(LOCAL_STORAGE_USERS_KEY, updatedUsers);
+  
+  // Если обновляется текущий пользователь, то обновляем и данные текущей сессии
+  if (currentUser.id === id) {
+    saveCurrentUser(updatedUser);
+  }
+  
+  return { success: true, data: updatedUser, message: "Уровень доступа пользователя успешно обновлен" };
+};
+
+// Создание должности пользователя
+export const updateUserPosition = async (
+  id: string, 
+  position: string, 
+  department?: Department
+): Promise<ApiResponse<User>> => {
+  // Имитация задержки API
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  const currentUser = getCurrentUser();
+  if (!currentUser) {
+    return { success: false, error: "Вы должны войти в систему" };
+  }
+  
+  if (currentUser.role !== UserRole.ADMIN) {
+    return { success: false, error: "У вас нет прав для изменения должностей" };
+  }
+  
+  const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
+  const userIndex = users.findIndex(u => u.id === id);
+  
+  if (userIndex === -1) {
+    return { success: false, error: "Пользователь не найден" };
+  }
+  
+  const updatedUser = {
+    ...users[userIndex],
+    position,
+    department: department || users[userIndex].department
+  };
+  
+  const updatedUsers = [
+    ...users.slice(0, userIndex),
+    updatedUser,
+    ...users.slice(userIndex + 1)
+  ];
+  
+  saveLocalData(LOCAL_STORAGE_USERS_KEY, updatedUsers);
+  
+  // Если обновляется текущий пользователь, то обновляем и данные текущей сессии
+  if (currentUser.id === id) {
+    saveCurrentUser(updatedUser);
+  }
+  
+  return { success: true, data: updatedUser, message: "Должность пользователя успешно обновлена" };
+};
+
+// Сброс всех данных в localStorage (только для тестирования)
+export const resetDatabase = async (): Promise<ApiResponse<null>> => {
+  localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
+  localStorage.removeItem(LOCAL_STORAGE_USERS_KEY);
+  localStorage.removeItem(LOCAL_STORAGE_OBJECTS_KEY);
+  localStorage.removeItem(LOCAL_STORAGE_POSTS_KEY);
+  
+  return { 
+    success: true, 
+    message: "База данных сброшена. Все пользователи, объекты и публикации удалены." 
+  };
 };

@@ -5,6 +5,11 @@ export interface User {
   role: UserRole;
   createdAt: string;
   isEmailVerified: boolean;
+  clearanceLevel?: ClearanceLevel;
+  position?: string;
+  department?: Department;
+  avatarUrl?: string;
+  bio?: string;
 }
 
 export enum UserRole {
@@ -13,6 +18,24 @@ export enum UserRole {
   SECURITY = "SECURITY",
   EXPLORER = "EXPLORER",
   READER = "READER"
+}
+
+export enum ClearanceLevel {
+  LEVEL_1 = "LEVEL_1",
+  LEVEL_2 = "LEVEL_2",
+  LEVEL_3 = "LEVEL_3",
+  LEVEL_4 = "LEVEL_4",
+  LEVEL_5 = "LEVEL_5"
+}
+
+export enum Department {
+  RESEARCH = "RESEARCH",
+  SECURITY = "SECURITY",
+  OPERATIONS = "OPERATIONS",
+  ADMINISTRATION = "ADMINISTRATION",
+  ETHICS = "ETHICS",
+  CONTAINMENT = "CONTAINMENT",
+  EXPLORATION = "EXPLORATION"
 }
 
 export interface SCEObject {
@@ -24,6 +47,12 @@ export interface SCEObject {
   description: string;
   additionalNotes?: string;
   images?: string[];
+  discoveryLocation?: string;
+  discoveryDate?: string;
+  discoveredBy?: string;
+  requiredClearance: ClearanceLevel;
+  associatedThreats?: string[];
+  relatedObjects?: string[];
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -43,8 +72,14 @@ export interface Post {
   title: string;
   content: string;
   category: PostCategory;
+  tags?: string[];
   authorId: string;
   authorName: string;
+  clearanceRequired?: ClearanceLevel;
+  summary?: string;
+  relatedObjects?: string[];
+  relatedPosts?: string[];
+  featuredImage?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,7 +88,10 @@ export enum PostCategory {
   NEWS = "NEWS",
   ARTICLE = "ARTICLE",
   REPORT = "REPORT",
-  MEMO = "MEMO"
+  MEMO = "MEMO",
+  BRIEFING = "BRIEFING",
+  EVENT = "EVENT",
+  INTERVIEW = "INTERVIEW"
 }
 
 export interface LoginData {
@@ -77,4 +115,43 @@ export interface ApiResponse<T> {
   data?: T;
   error?: string;
   message?: string;
+}
+
+export interface UpdateUserData {
+  username?: string;
+  email?: string;
+  role?: UserRole;
+  clearanceLevel?: ClearanceLevel;
+  position?: string;
+  department?: Department;
+  avatarUrl?: string;
+  bio?: string;
+}
+
+export interface CreateObjectData {
+  title: string;
+  objectClass: ObjectClass;
+  number: string;
+  containmentProcedures: string;
+  description: string;
+  additionalNotes?: string;
+  discoveryLocation?: string;
+  discoveryDate?: string;
+  discoveredBy?: string;
+  requiredClearance: ClearanceLevel;
+  associatedThreats?: string[];
+  relatedObjects?: string[];
+  images?: string[];
+}
+
+export interface CreatePostData {
+  title: string;
+  content: string;
+  category: PostCategory;
+  tags?: string[];
+  clearanceRequired?: ClearanceLevel;
+  summary?: string;
+  relatedObjects?: string[];
+  relatedPosts?: string[];
+  featuredImage?: string;
 }

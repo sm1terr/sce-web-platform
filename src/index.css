@@ -2,91 +2,69 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&display=swap');
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 96%;
+    --foreground: 0 0% 7%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 7%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 7%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 0 100% 30%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 0 0% 89%;
+    --muted-foreground: 0 0% 47%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 0 100% 30%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 0 0% 80%;
+    --input: 0 0% 80%;
+    --ring: 0 100% 30%;
 
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --radius: 0.25rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 0 100% 30%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 0 100% 30%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 0 100% 30%;
   }
 }
 
@@ -99,15 +77,27 @@
     @apply bg-sce-background text-sce-text;
     font-family: "Noto Sans", "Roboto", "Arial", sans-serif;
   }
+
+  /* SCE Foundation специфические стили */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-sce-primary;
+  }
+
+  a {
+    @apply text-sce-link hover:text-sce-hover transition-colors;
+  }
 }
 
 @layer components {
+  /* Шапка сайта */
   .sce-header {
-    @apply bg-sce-primary text-white py-4 px-6 flex items-center justify-between;
+    @apply bg-sce-primary text-sce-textAlt py-4 px-6 flex items-center justify-between border-b-8 border-sce-secondary;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
   .sce-logo {
-    @apply text-2xl font-bold tracking-tight;
+    @apply text-3xl font-bold tracking-tight font-mono;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   }
 
   .sce-nav {
@@ -115,42 +105,146 @@
   }
 
   .sce-nav-link {
-    @apply text-white hover:text-gray-200 transition-colors;
+    @apply text-sce-textAlt hover:text-sce-backgroundAlt transition-colors font-medium;
   }
 
+  /* Основной контейнер */
   .sce-container {
     @apply max-w-6xl mx-auto p-4;
   }
 
+  /* Футер */
   .sce-footer {
-    @apply bg-sce-secondary text-white py-4 px-6 mt-8;
+    @apply bg-sce-secondary text-sce-textAlt py-6 px-6 mt-8 border-t-8 border-sce-primary;
   }
 
+  /* Карточки объектов и постов */
   .sce-card {
-    @apply border border-sce-border rounded-md p-4 bg-white shadow-sm;
+    @apply border-2 border-sce-border rounded bg-white shadow-md p-6 transition-all;
+  }
+
+  .sce-card:hover {
+    @apply border-sce-borderDark shadow-lg;
   }
 
   .sce-card-title {
-    @apply text-xl font-bold text-sce-primary mb-2;
+    @apply text-xl font-bold text-sce-primary mb-4 pb-2 border-b border-sce-border;
   }
 
+  /* Кнопки */
   .sce-button {
-    @apply px-4 py-2 bg-sce-primary text-white rounded-md hover:bg-sce-hover transition-colors;
+    @apply px-4 py-2 bg-sce-primary text-sce-textAlt rounded font-medium 
+           hover:bg-sce-hover transition-colors shadow-sm;
   }
 
+  .sce-button-secondary {
+    @apply px-4 py-2 bg-sce-secondary text-sce-textAlt rounded font-medium 
+           hover:bg-sce-tertiary transition-colors shadow-sm;
+  }
+
+  .sce-button-outline {
+    @apply px-4 py-2 bg-transparent text-sce-primary rounded font-medium 
+           border-2 border-sce-primary hover:bg-sce-primary hover:text-sce-textAlt transition-all;
+  }
+
+  /* Ссылки */
   .sce-link {
     @apply text-sce-link hover:text-sce-hover underline transition-colors;
   }
 
+  /* Заголовки объектов */
+  .sce-object-header {
+    @apply bg-sce-primary text-white p-4 rounded-t font-mono border-b-4 border-sce-secondary;
+  }
+
   .sce-object-title {
-    @apply font-bold text-2xl text-sce-primary border-b border-sce-border pb-2 mb-4;
+    @apply font-bold text-2xl font-mono mb-2;
   }
 
-  .sce-object-info {
-    @apply grid grid-cols-1 md:grid-cols-2 gap-4 mb-4;
+  .sce-object-number {
+    @apply text-lg font-mono mb-4;
   }
 
-  .sce-object-description {
-    @apply prose max-w-none;
+  .sce-object-class {
+    @apply inline-block px-3 py-1 text-white font-bold rounded;
+  }
+
+  .sce-object-class-safe {
+    @apply bg-sce-safe;
+  }
+
+  .sce-object-class-euclid {
+    @apply bg-sce-euclid;
+  }
+
+  .sce-object-class-keter {
+    @apply bg-sce-keter;
+  }
+
+  .sce-object-class-thaumiel {
+    @apply bg-sce-thaumiel;
+  }
+
+  .sce-object-class-neutralized {
+    @apply bg-sce-neutralized;
+  }
+
+  .sce-object-class-explained {
+    @apply bg-sce-explained;
+  }
+
+  .sce-object-content {
+    @apply bg-white p-6 border-2 border-t-0 border-sce-border rounded-b;
+  }
+
+  .sce-section-title {
+    @apply text-xl font-bold mb-4 text-sce-secondary border-b-2 border-sce-border pb-2;
+  }
+
+  /* Форма входа и регистрации */
+  .sce-form-container {
+    @apply max-w-md mx-auto my-8 p-6 bg-white border-2 border-sce-border rounded shadow-md;
+  }
+
+  .sce-form-title {
+    @apply text-2xl font-bold text-sce-primary mb-6 pb-4 border-b-2 border-sce-border text-center;
+  }
+
+  .sce-form-field {
+    @apply mb-4;
+  }
+
+  .sce-form-label {
+    @apply block text-sce-secondary font-medium mb-2;
+  }
+
+  .sce-form-input {
+    @apply w-full p-2 border border-sce-border rounded focus:border-sce-primary 
+           focus:ring-1 focus:ring-sce-primary transition-all;
+  }
+
+  /* Индикаторы уровня доступа */
+  .sce-clearance-badge {
+    @apply inline-flex items-center justify-center px-3 py-1 rounded text-white font-bold text-sm;
+  }
+
+  .sce-clearance-1 {
+    @apply bg-green-600;
+  }
+
+  .sce-clearance-2 {
+    @apply bg-blue-600;
+  }
+
+  .sce-clearance-3 {
+    @apply bg-orange-600;
+  }
+
+  .sce-clearance-4 {
+    @apply bg-red-600;
+  }
+
+  .sce-clearance-5 {
+    @apply bg-black;
   }
 }

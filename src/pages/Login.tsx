@@ -1,116 +1,135 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "@/lib/api";
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
-const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const Login: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-
+  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    setIsLoading(true);
-
+    
+    if (!email || !password) {
+      setError("Пожалуйста, заполните все поля формы");
+      return;
+    }
+    
+    setIsSubmitting(true);
+    
     try {
-      const response = await login({ email, password });
+      const response = await login({
+        email,
+        password
+      });
       
       if (response.success) {
         toast({
           title: "Вход выполнен успешно",
-          description: "Добро пожаловать в Фонд SCE.",
+          description: `Добро пожаловать, ${response.data?.username}!`,
           variant: "default",
         });
         navigate("/");
       } else {
         setError(response.error || "Произошла ошибка при входе");
+        // Для демонстрационных целей показываем подсказку о пароле
+        if (response.error?.includes("Неверный пароль")) {
+          setError("Неверный пароль. Для демонстрации используйте пароль 'password'");
+        }
       }
-    } catch (error) {
-      setError("Произошла ошибка при подключении к серверу");
+    } catch (err) {
+      setError("Произошла ошибка при обработке запроса");
+      console.error(err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
-
+  
   return (
     <Layout>
       <div className="sce-container py-12">
-        <div className="max-w-md mx-auto">
-          <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center text-sce-primary">
-                Вход в систему
-              </CardTitle>
-              <CardDescription className="text-center">
-                Введите ваши учетные данные
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
-                  {error}
-                </div>
-              )}
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="example@sce.org"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="password">Пароль</Label>
-                      <Link 
-                        to="/forgot-password" 
-                        className="text-sm text-sce-link hover:text-sce-hover"
-                      >
-                        Забыли пароль?
-                      </Link>
-                    </div>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
-                  </div>
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-sce-primary hover:bg-sce-hover"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Выполняется вход..." : "Войти"}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-            <CardFooter className="flex flex-col space-y-4">
-              <div className="text-center text-sm">
-                Нет учетной записи?{" "}
-                <Link to="/register" className="text-sce-link hover:text-sce-hover font-medium">
-                  Зарегистрироваться
-                </Link>
+        <Card className="max-w-md mx-auto">
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-sce-primary text-center">Вход в систему</CardTitle>
+            <CardDescription className="text-center">
+              Войдите в вашу учетную запись Фонда SCE
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant={error.includes('демонстрации') ? "default" : "destructive"} className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Ошибка</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Введите ваш email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="email"
+                />
               </div>
-            </CardFooter>
-          </Card>
-        </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="password">Пароль</Label>
+                  <Link to="/reset-password" className="text-xs text-sce-link">
+                    Забыли пароль?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Введите ваш пароль"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+              
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Выполняется вход..." : "Войти"}
+              </Button>
+            </form>
+            
+            {/* Подсказка для демонстрационного режима */}
+            <div className="mt-6 p-3 bg-muted rounded-md">
+              <p className="text-sm text-muted-foreground">
+                <strong>Для демонстрации:</strong> Используйте любой email из зарегистрированных аккаунтов и пароль "password".
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-center">
+            <p className="text-sm text-muted-foreground">
+              Ещё нет аккаунта?{" "}
+              <Link to="/register" className="text-sce-link font-medium">
+                Зарегистрироваться
+              </Link>
+            </p>
+          </CardFooter>
+        </Card>
       </div>
     </Layout>
   );

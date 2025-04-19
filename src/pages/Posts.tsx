@@ -1,139 +1,225 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { getPosts } from "@/lib/api";
-import { Post, PostCategory } from "@/types";
-import PostCard from "@/components/PostCard";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
+import { Post, PostCategory, ClearanceLevel } from "@/types";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon, AlertCircleIcon, FileTextIcon, NewspaperIcon, FileIcon, MessagesSquareIcon } from "lucide-react";
 
-const Posts = () => {
+const Posts: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("all");
 
+  // Загрузка данных
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        setIsLoading(true);
+        setLoading(true);
         const response = await getPosts();
         
         if (response.success && response.data) {
           setPosts(response.data);
           setFilteredPosts(response.data);
         } else {
-          setError("Не удалось загрузить публикации");
+          setError(response.error || "Не удалось загрузить публикации");
         }
-      } catch (error) {
-        setError("Произошла ошибка при загрузке данных");
+      } catch (err) {
+        setError("Произошла ошибка при загрузке публикаций");
+        console.error(err);
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
 
     fetchPosts();
   }, []);
 
-  // Apply filters when search query or category filter changes
+  // Фильтрация постов при изменении активной вкладки
   useEffect(() => {
-    let result = [...posts];
-    
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(
-        (post) =>
-          post.title.toLowerCase().includes(query) ||
-          post.content.toLowerCase().includes(query) ||
-          post.authorName.toLowerCase().includes(query)
-      );
+    if (activeTab === "all") {
+      setFilteredPosts(posts);
+    } else {
+      setFilteredPosts(posts.filter(post => post.category === activeTab));
     }
-    
-    // Apply category filter
-    if (categoryFilter !== "ALL") {
-      result = result.filter((post) => post.category === categoryFilter);
+  }, [activeTab, posts]);
+
+  // Получить иконку для категории поста
+  const getCategoryIcon = (category: PostCategory) => {
+    switch (category) {
+      case PostCategory.NEWS:
+        return <NewspaperIcon size={16} className="mr-1" />;
+      case PostCategory.ARTICLE:
+        return <FileTextIcon size={16} className="mr-1" />;
+      case PostCategory.REPORT:
+        return <FileIcon size={16} className="mr-1" />;
+      case PostCategory.MEMO:
+        return <MessagesSquareIcon size={16} className="mr-1" />;
+      case PostCategory.BRIEFING:
+        return <AlertCircleIcon size={16} className="mr-1" />;
+      default:
+        return <InfoIcon size={16} className="mr-1" />;
     }
+  };
+
+  // Получить локализованное название категории
+  const getCategoryName = (category: PostCategory) => {
+    const categoryNames = {
+      [PostCategory.NEWS]: "Новости",
+      [PostCategory.ARTICLE]: "Статья",
+      [PostCategory.REPORT]: "Отчет",
+      [PostCategory.MEMO]: "Меморандум",
+      [PostCategory.BRIEFING]: "Брифинг",
+      [PostCategory.EVENT]: "Событие",
+      [PostCategory.INTERVIEW]: "Интервью"
+    };
     
-    // Sort by date (newest first)
-    result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return categoryNames[category] || category;
+  };
+
+  // Получить цвет бейджа уровня доступа
+  const getClearanceColor = (level: ClearanceLevel | undefined) => {
+    if (!level) return "bg-gray-500";
     
-    setFilteredPosts(result);
-  }, [searchQuery, categoryFilter, posts]);
+    const clearanceColors = {
+      [ClearanceLevel.LEVEL_1]: "bg-green-600",
+      [ClearanceLevel.LEVEL_2]: "bg-blue-600",
+      [ClearanceLevel.LEVEL_3]: "bg-orange-600",
+      [ClearanceLevel.LEVEL_4]: "bg-red-600",
+      [ClearanceLevel.LEVEL_5]: "bg-black"
+    };
+    
+    return clearanceColors[level];
+  };
+
+  // Форматирование даты
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date);
+  };
+
+  // Генерация описания из контента (первые 150 символов)
+  const getPostSummary = (post: Post) => {
+    if (post.summary) return post.summary;
+    
+    const maxLength = 150;
+    return post.content.length > maxLength 
+      ? `${post.content.substring(0, maxLength)}...` 
+      : post.content;
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="sce-container py-12">
+          <h1 className="text-3xl font-bold text-sce-primary mb-6 text-center">Публикации Фонда SCE</h1>
+          <div className="text-center py-10">Загрузка публикаций...</div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error) {
+    return (
+      <Layout>
+        <div className="sce-container py-12">
+          <h1 className="text-3xl font-bold text-sce-primary mb-6 text-center">Публикации Фонда SCE</h1>
+          <Alert variant="destructive" className="max-w-xl mx-auto">
+            <AlertCircleIcon className="h-4 w-4" />
+            <AlertTitle>Ошибка</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout>
       <div className="sce-container py-12">
-        <h1 className="text-3xl font-bold text-sce-primary mb-6">Публикации</h1>
-        
-        {/* Filters */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="search" className="mb-2 block">Поиск</Label>
-            <Input
-              id="search"
-              placeholder="Поиск по заголовку, содержанию или автору..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div>
-            <Label htmlFor="category-filter" className="mb-2 block">Категория</Label>
-            <Select
-              value={categoryFilter}
-              onValueChange={setCategoryFilter}
-            >
-              <SelectTrigger id="category-filter" className="w-full">
-                <SelectValue placeholder="Все категории" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">Все категории</SelectItem>
-                <SelectItem value={PostCategory.NEWS}>Новости</SelectItem>
-                <SelectItem value={PostCategory.ARTICLE}>Статьи</SelectItem>
-                <SelectItem value={PostCategory.REPORT}>Отчеты</SelectItem>
-                <SelectItem value={PostCategory.MEMO}>Меморандумы</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-sce-primary mb-3">Публикации Фонда SCE</h1>
+          <p className="text-sce-secondary max-w-2xl mx-auto">
+            Официальные публикации, отчеты, новости и другие материалы, касающиеся деятельности Фонда SCE и содержания объектов под нашим контролем.
+          </p>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p>Загрузка публикаций...</p>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+          <div className="flex justify-center mb-6">
+            <TabsList>
+              <TabsTrigger value="all">Все</TabsTrigger>
+              <TabsTrigger value={PostCategory.NEWS}>Новости</TabsTrigger>
+              <TabsTrigger value={PostCategory.ARTICLE}>Статьи</TabsTrigger>
+              <TabsTrigger value={PostCategory.REPORT}>Отчеты</TabsTrigger>
+              <TabsTrigger value={PostCategory.MEMO}>Меморандумы</TabsTrigger>
+            </TabsList>
           </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded">
-            <p>{error}</p>
-          </div>
-        ) : filteredPosts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPosts.map((post) => (
-              <PostCard key={post.id} post={post} />
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-12 border border-gray-200 rounded-md">
-            <p className="text-lg">Публикации не найдены</p>
-            {searchQuery || categoryFilter !== "ALL" ? (
-              <p className="text-sm text-gray-500 mt-2">
-                Попробуйте изменить параметры поиска
-              </p>
+
+          <TabsContent value={activeTab}>
+            {filteredPosts.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-sce-secondary text-lg">Публикации данной категории не найдены.</p>
+              </div>
             ) : (
-              <p className="text-sm text-gray-500 mt-2">
-                В базе данных пока нет публикаций
-              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredPosts.map((post) => (
+                  <Card key={post.id} className="sce-card overflow-hidden flex flex-col h-full">
+                    {post.featuredImage && (
+                      <div className="aspect-video w-full overflow-hidden">
+                        <img 
+                          src={post.featuredImage || "/placeholder.svg"} 
+                          alt={post.title} 
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <Badge className="flex items-center" variant="outline">
+                          {getCategoryIcon(post.category)}
+                          {getCategoryName(post.category)}
+                        </Badge>
+                        {post.clearanceRequired && (
+                          <Badge className={`${getClearanceColor(post.clearanceRequired)} text-white`}>
+                            Уровень {post.clearanceRequired.replace('LEVEL_', '')}
+                          </Badge>
+                        )}
+                      </div>
+                      <CardTitle className="sce-card-title line-clamp-2 border-b-0 mb-0 pb-0">
+                        {post.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="py-0 flex-grow">
+                      <p className="text-sm text-muted-foreground mb-4">
+                        <span className="font-medium">{post.authorName}</span> • {formatDate(post.createdAt)}
+                      </p>
+                      <p className="line-clamp-3 text-sce-text">
+                        {getPostSummary(post)}
+                      </p>
+                    </CardContent>
+                    <CardFooter className="pt-4">
+                      <Button asChild className="w-full">
+                        <Link to={`/posts/${post.id}`}>Читать полностью</Link>
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
             )}
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );

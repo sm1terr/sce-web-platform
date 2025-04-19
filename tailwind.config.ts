@@ -47,19 +47,29 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // SCE Foundation colors
+        // SCE Foundation colors - обновленная цветовая схема
         sce: {
-          primary: "#900",
-          secondary: "#333",
-          background: "#f0f0f0",
-          text: "#111",
-          border: "#ccc",
-          link: "#990000",
-          hover: "#770000",
-          success: "#006600",
-          error: "#990000",
-          warning: "#cc7700",
-          info: "#006699",
+          primary: "#990000",           // Темно-красный (основной цвет)
+          secondary: "#333333",         // Темно-серый (вторичный цвет)
+          tertiary: "#1a1a1a",          // Почти черный (для выделения элементов)
+          background: "#f5f5f5",        // Светло-серый фон
+          backgroundAlt: "#e3e3e3",     // Альтернативный фон для карточек
+          text: "#111111",              // Основной цвет текста
+          textAlt: "#ffffff",           // Альтернативный цвет текста (для темного фона)
+          border: "#cccccc",            // Цвет границ элементов
+          borderDark: "#990000",        // Темная граница (для выделенных элементов)
+          link: "#990000",              // Цвет ссылок
+          hover: "#770000",             // Цвет при наведении
+          success: "#006600",           // Цвет успеха
+          error: "#990000",             // Цвет ошибки
+          warning: "#cc7700",           // Цвет предупреждения
+          info: "#006699",              // Цвет информации
+          safe: "#009966",              // Класс объекта: Safe
+          euclid: "#cc7700",            // Класс объекта: Euclid
+          keter: "#cc0000",             // Класс объекта: Keter
+          thaumiel: "#6600cc",          // Класс объекта: Thaumiel
+          neutralized: "#666666",       // Класс объекта: Neutralized
+          explained: "#336699",         // Класс объекта: Explained
         },
       },
       borderRadius: {
@@ -68,7 +78,20 @@ export default {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["Inter", ...fontFamily.sans],
+        sans: ["Noto Sans", "Inter", ...fontFamily.sans],
+        mono: ["Courier New", "monospace"],
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            a: {
+              color: '#990000',
+              '&:hover': {
+                color: '#770000',
+              },
+            },
+          },
+        },
       },
       keyframes: {
         "accordion-down": {

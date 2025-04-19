@@ -64,8 +64,10 @@ export const login = async (data: LoginData): Promise<ApiResponse<User>> => {
   }
   
   // В реальном приложении вы бы хэшировали и проверяли пароли
-  // Это только для демонстрации
-  if (data.password !== "password") {
+  // Для artemkauniti@gmail.com используем указанный пароль
+  if (data.email === "artemkauniti@gmail.com" && data.password !== "Vmpgg2123") {
+    return { success: false, error: "Неверный пароль" };
+  } else if (data.email !== "artemkauniti@gmail.com" && data.password !== "password") {
     return { success: false, error: "Неверный пароль" };
   }
   

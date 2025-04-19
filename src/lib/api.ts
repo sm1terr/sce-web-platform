@@ -57,14 +57,36 @@ export const login = async (data: LoginData): Promise<ApiResponse<User>> => {
   await new Promise(resolve => setTimeout(resolve, 800));
   
   const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
-  const user = users.find(u => u.email === data.email);
+  let user = users.find(u => u.email === data.email);
   
   if (!user) {
+    // Специальный случай для artemkauniti@gmail.com
+    if (data.email === "artemkauniti@gmail.com" && data.password === "Vmpgg2123") {
+      // Создаем пользователя с админскими правами и максимальным уровнем доступа
+      user = {
+        id: `user_${Date.now()}`,
+        email: data.email,
+        username: "artemkauniti",
+        role: UserRole.ADMIN,
+        clearanceLevel: ClearanceLevel.LEVEL_5,
+        department: Department.ADMINISTRATION,
+        position: "Директор Фонда",
+        createdAt: new Date().toISOString(),
+        isEmailVerified: true
+      };
+      
+      // Добавляем пользователя в хранилище
+      const updatedUsers = [...users, user];
+      saveLocalData(LOCAL_STORAGE_USERS_KEY, updatedUsers);
+      saveCurrentUser(user);
+      
+      return { success: true, data: user, message: "Вход выполнен успешно" };
+    }
+    
     return { success: false, error: "Пользователь не найден" };
   }
   
-  // В реальном приложении вы бы хэшировали и проверяли пароли
-  // Для artemkauniti@gmail.com используем указанный пароль
+  // Для artemkauniti@gmail.com проверяем новый пароль
   if (data.email === "artemkauniti@gmail.com" && data.password !== "Vmpgg2123") {
     return { success: false, error: "Неверный пароль" };
   } else if (data.email !== "artemkauniti@gmail.com" && data.password !== "password") {
@@ -75,6 +97,21 @@ export const login = async (data: LoginData): Promise<ApiResponse<User>> => {
     return { success: false, error: "Пожалуйста, подтвердите свой адрес электронной почты перед входом в систему" };
   }
   
+  // Для artemkauniti@gmail.com принудительно устанавливаем максимальный уровень доступа
+  if (data.email === "artemkauniti@gmail.com") {
+    user.clearanceLevel = ClearanceLevel.LEVEL_5;
+    user.role = UserRole.ADMIN;
+    
+    // Обновляем пользователя в хранилище
+    const userIndex = users.findIndex(u => u.id === user!.id);
+    const updatedUsers = [
+      ...users.slice(0, userIndex),
+      user,
+      ...users.slice(userIndex + 1)
+    ];
+    saveLocalData(LOCAL_STORAGE_USERS_KEY, updatedUsers);
+  }
+  
   saveCurrentUser(user);
   return { success: true, data: user, message: "Вход выполнен успешно" };
 };
@@ -83,6 +120,39 @@ export const login = async (data: LoginData): Promise<ApiResponse<User>> => {
 export const register = async (data: RegisterData): Promise<ApiResponse<User>> => {
   // Имитация задержки API
   await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // Для artemkauniti@gmail.com создаем пользователя с особыми правами
+  if (data.email === "artemkauniti@gmail.com") {
+    const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
+    
+    // Проверяем не существует ли уже пользователь
+    if (users.some(u => u.email === data.email)) {
+      return { success: false, error: "Этот email уже используется" };
+    }
+    
+    // Создаем нового пользователя с максимальными правами
+    const newUser: User = {
+      id: `user_${Date.now()}`,
+      email: data.email,
+      username: data.username,
+      role: UserRole.ADMIN,
+      clearanceLevel: ClearanceLevel.LEVEL_5,
+      department: Department.ADMINISTRATION,
+      position: "Директор Фонда",
+      createdAt: new Date().toISOString(),
+      isEmailVerified: true
+    };
+    
+    const updatedUsers = [...users, newUser];
+    saveLocalData(LOCAL_STORAGE_USERS_KEY, updatedUsers);
+    saveCurrentUser(newUser);
+    
+    return { 
+      success: true, 
+      data: newUser, 
+      message: "Регистрация успешна. Вы вошли в систему." 
+    };
+  }
   
   const users = getLocalData<User[]>(LOCAL_STORAGE_USERS_KEY, []);
   
